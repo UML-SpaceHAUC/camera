@@ -111,6 +111,7 @@ int camera_Sync(int stream) {
 		time += 1000;
 		usleep(time);
 	}
+	sleep(2);
 	if (succ == 1) {
 		printf("SUCC\n");
 		for (int i = 0; i < 60; i++) {
