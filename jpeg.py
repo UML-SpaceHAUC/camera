@@ -257,6 +257,7 @@ def camera_get_picture_jpg():
 			temp = received[3]
 			temp *= 256
 			pcknum = temp
+            print(pcknum, nump)
 							#MUST ACK OR CAMERA LOOPS
 		return True
 	return False

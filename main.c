@@ -39,6 +39,8 @@ int main(int argc, char* argv[]) {
 		printf("failed to sync\n");
 		exit(1);
 	}
+	printf("synced\n");
+	sleep(2);
 	if(!camera_Initialize(stream)) {
 		printf("failed to init\n");
 		exit(1);
@@ -102,42 +104,16 @@ int camera_Sync(int stream) {
 							printf("###### WRITE ERROR ######\nRETRYING\n");
 						} else {
 							printf("Successfull SYNC!\n");
-							succ = 1;
 							i = 60;
-							//return 1;
+							sleep(2);
+							return 1;
 						}
 					}
 				}
 		time += 1000;
 		usleep(time);
 	}
-	sleep(2);
-	if (succ == 1) {
-		printf("SUCC\n");
-		for (int i = 0; i < 60; i++) {
-		count = write(stream, _CAMERA_INIT, 6);
-		if (count < 0) {
-			printf("###### WRITE ERROR ######\nEXITING\n");
-			exit(1);
-		}
-			count = read(stream, (void*) inbuff, 6);
-			//FOR DEBUGGING
-					for (int j = 0; j < 6; ++j) {
-						printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _CAMERA_INIT_ACK[j]);
-					}
-			if (count < 0) {
-				printf("###### READ ERROR ######\nEXITING\n");
-				exit(1);
-			}
-
-			if (inbuff[0] == _CAMERA_INIT_ACK[0] && inbuff[1] == _CAMERA_INIT_ACK[1] && inbuff[2] == _CAMERA_INIT_ACK[2]) {
-				printf("Camera Initialized\n");
-				return 1;
-			}
-		}
-		return 0;
-	}
-	printf("oof");
+	return 0;
 }
 
 int camera_Initialize(int stream) {
@@ -154,14 +130,14 @@ int camera_Initialize(int stream) {
 	for (int i = 0; i < 60; i++) {
 		count = read(stream, (void*) inbuff, 6);
 		//FOR DEBUGGING
-		//		for (int j = 0; j < 6; ++j) {
-		//			printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _CAMERA_INIT_ACK[j]);
-		//		}
+				for (int j = 0; j < 6; ++j) {
+					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _CAMERA_INIT_ACK[j]);
+				}
 		if (count < 0) {
 			printf("###### READ ERROR ######\nEXITING\n");
 			exit(1);
 		}
-
+		//printf(".");
 		if (inbuff[0] == _CAMERA_INIT_ACK[0] && inbuff[1] == _CAMERA_INIT_ACK[1] && inbuff[2] == _CAMERA_INIT_ACK[2]) {
 			printf("Camera Initialized\n");
 			return 1;
@@ -177,21 +153,26 @@ int camera_Size(int stream) {
 	int count = 0;
 	char inbuff[6];
 
-	count = write(stream, _SIZE, 6);
-	if (count < 0) {
-		printf("###### WRITE ERROR ######\nEXITING\n");
-		exit(1);
-	}
+		count = write(stream, _SIZE, 6);
+		if (count < 0) {
+			printf("###### WRITE ERROR ######\nEXITING\n");
+			exit(1);
+		}
+	for (int i = 0; i < 60; i++) {
+		count = read(stream, (void*) inbuff, 6);
+		//FOR DEBUGGING
+				for (int j = 0; j < 6; ++j) {
+					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _SIZE_ACK[j]);
+				}
+		if (count < 0) {
+			printf("###### READ ERROR ######\nEXITING\n");
+			exit(1);
+		}
 
-	count = read(stream, (void*) inbuff, 6);
-	if (count < 0) {
-		printf("###### READ ERROR ######\nEXITING\n");
-		exit(1);
-	}
-
-	if (inbuff[0] == _SIZE_ACK[0] && inbuff[1] == _SIZE_ACK[1] && inbuff[2] == _SIZE_ACK[2]) {
-		printf("Camera Initialized\n");
-		return 1;
+		if (inbuff[0] == _SIZE_ACK[0] && inbuff[1] == _SIZE_ACK[1] && inbuff[2] == _SIZE_ACK[2]) {
+			printf("Camera Sized\n");
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -209,88 +190,103 @@ int camera_Jpg(int stream, char* str) {
 	int size = 0;
 	int temp = 0;
 	int nump = 0;
-
+  int yes = 0;
+	int pcknum = 0;
 	img = fopen(str, "wb");
 
 	count = write(stream, _GET, 6);
 	if (count < 0) {
-		printf("###### WRITE ERROR ######\nEXITING\n");
+		printf("###### WRITE STREAM ERROR ######\nEXITING\n");
 		exit(1);
 	}
-
-	count = read(stream, (void*) inbuff, 6);
-	if (count < 0) {
-		printf("###### READ ERROR ######\nEXITING\n");
-		exit(1);
-	}
-	for (int i = 0; i < 6; i++) {
-	printf("ack?: %X\n", inbuff[i]);
-	}
-	if (inbuff[0] == _GET_ACK[0] && inbuff[1] == _GET_ACK[1] && inbuff[2] == _GET_ACK[2]) {
+	for (int i = 0; i < 60; i++) {
 		count = read(stream, (void*) inbuff, 6);
 		if (count < 0) {
 			printf("###### READ ERROR ######\nEXITING\n");
 			exit(1);
 		}
-	}
-	else {
-		printf("no ack for get\n");
-	}
-	printf("pre data\n");
-	if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1] && inbuff[2] == _DATA[2]) {
-		printf("into the data\n");
-		size += inbuff[5];
-		temp = inbuff[4];
-		temp = temp * 256;
-		size += temp;
-		temp = inbuff[3] ;
-		temp = temp * 65536;
-		size += temp;
-
-		nump = size/(512 - 6);
-
-		count = write(stream, _DACK, 6);
-		if (count < 0) {
-			printf("###### WRITE ERROR ######\nEXITING\n");
-			exit(1);
+		//FOR DEBUGGING
+				for (int j = 0; j < 6; ++j) {
+					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _GET_ACK[j]);
+				}
+				if (inbuff[0] == _GET_ACK[0] && inbuff[1] == _GET_ACK[1] && inbuff[2] == _GET_ACK[2]) {
+					i = 60;
+					printf("getacked\n");
+				}
 		}
-
-		count = read(stream, (void*) received, 512);
-		if (count < 0) {
-			printf("###### READ ERROR ######\nEXITING\n");
-			exit(1);
-		}
-		size = received[4];
-		temp = received[3];
-		temp *= 256;
-		size += temp;
-		_DACK[4] = received[0];
-		_DACK[5] = received[1];
-		int pcknum = 0;
-		char tempr[506];
-		for (int i = 0; (i > 4 && i < 510); i++) {
-			tempr[i-4] = received[i];
-		}
-		while (pcknum < nump) {
-			if (!(fprintf(img, "%s", tempr))) {
-				printf("###### WRITE ERROR ######\nEXITING\n");
-				exit(1);
+	for(int i = 0; i < 60; i++) {
+		count = read(stream, (void*) inbuff, 6);
+		//FOR DEBUGGING
+				for (int j = 0; j < 6; ++j) {
+					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _DATA[j]);
+				}
+				if (count < 0) {
+					printf("###### READ ERROR ######\nEXITING\n");
+					exit(1);
+				}
+				printf("pre data\n");
+				if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1] && inbuff[2] == _DATA[2]) {
+					i = 60;
+					yes = 1;
+				}
 			}
-			_DACK[4] = received[0];
-			_DACK[5] = received[1];
-			write(stream, _DACK, 6);
-			count = read(stream, (void*) received, 512);
-			if (count < 0) {
-				printf("###### READ ERROR ######\nEXITING\n");
-				exit(1);
-			}
-			pcknum = received[4];
-			temp = received[3];
-			temp *= 256;
-			pcknum = temp;
-		}
+			if(yes == 1) {
+				printf("into the data\n");
+				size += inbuff[5];
+				temp = inbuff[4];
+				temp = temp * 256;
+				size += temp;
+				temp = inbuff[3] ;
+				temp = temp * 65536;
+				size += temp;
+				printf("size = %d\n", size);
+				nump = size;
+
+				count = write(stream, _DACK, 6);
+				if (count < 0) {
+					printf("###### WRITE FILE ERROR ######\nEXITING\n");
+					exit(1);
+				}
+
+				count = read(stream, (void*) received, 512);
+				if (count < 0) {
+					printf("###### READ ERROR ######\nEXITING\n");
+					exit(1);
+				}
+				size = received[4];
+				temp = received[3];
+				temp *= 256;
+				size += temp;
+				_DACK[4] = received[0];
+				_DACK[5] = received[1];
+				pcknum = 0;
+				while (pcknum < nump) {
+					char tempr[506];
+					int j = 0;
+					for(int k = 4; k < 510; k++) {
+						tempr[j] = received[k];
+						j++;
+					}
+
+					if ((fwrite(&tempr, sizeof(tempr), 1, img) <= 0)) {
+						printf("###### WRITE FILE ERROR ######\nEXITING\n");
+						exit(1);
+					}
+					_DACK[4] = received[0];
+					_DACK[5] = received[1];
+					write(stream, _DACK, 6);
+					count = read(stream, (void*) received, 512);
+					if (count < 0) {
+						printf("###### READ ERROR ######\nEXITING\n");
+						exit(1);
+					}
+					temp = received[3];
+					temp *= 256;
+					pcknum = temp;
+					printf("%d, %d\n", pcknum, nump);
+				}
 		return 1;
 	}
 printf("failed.\n");
-exit(1);
+return 0;
 }
