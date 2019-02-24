@@ -127,21 +127,20 @@ int camera_Initialize(int stream) {
 		printf("###### WRITE ERROR ######\nEXITING\n");
 		exit(1);
 	}
-	for (int i = 0; i < 60; i++) {
-		count = read(stream, (void*) inbuff, 6);
-		//FOR DEBUGGING
-				for (int j = 0; j < 6; ++j) {
-					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _CAMERA_INIT_ACK[j]);
-				}
-		if (count < 0) {
-			printf("###### READ ERROR ######\nEXITING\n");
-			exit(1);
-		}
-		//printf(".");
-		if (inbuff[0] == _CAMERA_INIT_ACK[0] && inbuff[1] == _CAMERA_INIT_ACK[1] && inbuff[2] == _CAMERA_INIT_ACK[2]) {
-			printf("Camera Initialized\n");
-			return 1;
-		}
+	sleep(1);
+	count = read(stream, (void*) inbuff, 6);
+	//FOR DEBUGGING
+	//		for (int j = 0; j < 6; ++j) {
+	//			printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _CAMERA_INIT_ACK[j]);
+	//		}
+	if (count < 0) {
+		printf("###### READ ERROR ######\nEXITING\n");
+		exit(1);
+	}
+	//printf(".");
+	if (inbuff[0] == _CAMERA_INIT_ACK[0] && inbuff[1] == _CAMERA_INIT_ACK[1] && inbuff[2] == _CAMERA_INIT_ACK[2]) {
+		printf("Camera Initialized\n");
+		return 1;
 	}
 	return 0;
 }
@@ -158,21 +157,19 @@ int camera_Size(int stream) {
 			printf("###### WRITE ERROR ######\nEXITING\n");
 			exit(1);
 		}
-	for (int i = 0; i < 60; i++) {
-		count = read(stream, (void*) inbuff, 6);
-		//FOR DEBUGGING
-				for (int j = 0; j < 6; ++j) {
-					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _SIZE_ACK[j]);
-				}
-		if (count < 0) {
-			printf("###### READ ERROR ######\nEXITING\n");
-			exit(1);
-		}
-
-		if (inbuff[0] == _SIZE_ACK[0] && inbuff[1] == _SIZE_ACK[1] && inbuff[2] == _SIZE_ACK[2]) {
-			printf("Camera Sized\n");
-			return 1;
-		}
+	sleep(1);
+	count = read(stream, (void*) inbuff, 6);
+	//FOR DEBUGGING
+	//		for (int j = 0; j < 6; ++j) {
+	//			printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _SIZE_ACK[j]);
+	//		}
+	if (count < 0) {
+		printf("###### READ ERROR ######\nEXITING\n");
+		exit(1);
+	}
+	if (inbuff[0] == _SIZE_ACK[0] && inbuff[1] == _SIZE_ACK[1] && inbuff[2] == _SIZE_ACK[2]) {
+		printf("Camera Sized\n");
+		return 1;
 	}
 	return 0;
 }
@@ -199,38 +196,35 @@ int camera_Jpg(int stream, char* str) {
 		printf("###### WRITE STREAM ERROR ######\nEXITING\n");
 		exit(1);
 	}
-	for (int i = 0; i < 60; i++) {
-		count = read(stream, (void*) inbuff, 6);
-		if (count < 0) {
-			printf("###### READ ERROR ######\nEXITING\n");
-			exit(1);
-		}
-		//FOR DEBUGGING
-				for (int j = 0; j < 6; ++j) {
-					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _GET_ACK[j]);
-				}
-				if (inbuff[0] == _GET_ACK[0] && inbuff[1] == _GET_ACK[1] && inbuff[2] == _GET_ACK[2]) {
-					i = 60;
-					printf("getacked\n");
-				}
-		}
-	for(int i = 0; i < 60; i++) {
+	sleep(1);
+	count = read(stream, (void*) inbuff, 6);
+	if (count < 0) {
+		printf("###### READ ERROR ######\nEXITING\n");
+		exit(1);
+	}
+	//FOR DEBUGGING
+	//		for (int j = 0; j < 6; ++j) {
+	//			printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _GET_ACK[j]);
+	//		}
+	if (inbuff[0] == _GET_ACK[0] && inbuff[1] == _GET_ACK[1] && inbuff[2] == _GET_ACK[2]) {
+		printf("getacked\n");
+		sleep(2);
 		count = read(stream, (void*) inbuff, 6);
 		//FOR DEBUGGING
-				for (int j = 0; j < 6; ++j) {
-					printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _DATA[j]);
-				}
-				if (count < 0) {
-					printf("###### READ ERROR ######\nEXITING\n");
-					exit(1);
-				}
-				printf("pre data\n");
-				if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1] && inbuff[2] == _DATA[2]) {
-					i = 60;
-					yes = 1;
-				}
+		//		for (int j = 0; j < 6; ++j) {
+		//			printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n", j, inbuff[j], _DATA[j]);
+		//		}
+			if (count < 0) {
+				printf("###### READ ERROR ######\nEXITING\n");
+				exit(1);
+			}
+			printf("pre data\n");
+			if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1] && inbuff[2] == _DATA[2]) {
+				yes = 1;
+			}
 			}
 			if(yes == 1) {
+				sleep(5);
 				printf("into the data\n");
 				size += inbuff[5];
 				temp = inbuff[4];
@@ -240,14 +234,14 @@ int camera_Jpg(int stream, char* str) {
 				temp = temp * 65536;
 				size += temp;
 				printf("size = %d\n", size);
-				nump = size;
+				nump = size/(512 - 6);
 
 				count = write(stream, _DACK, 6);
 				if (count < 0) {
 					printf("###### WRITE FILE ERROR ######\nEXITING\n");
 					exit(1);
 				}
-
+				sleep(1);
 				count = read(stream, (void*) received, 512);
 				if (count < 0) {
 					printf("###### READ ERROR ######\nEXITING\n");
@@ -267,26 +261,30 @@ int camera_Jpg(int stream, char* str) {
 						tempr[j] = received[k];
 						j++;
 					}
-
-					if ((fwrite(&tempr, sizeof(tempr), 1, img) <= 0)) {
+					count = fwrite(&tempr, 1, sizeof(tempr), img);
+					if ((count <= 0)) {
 						printf("###### WRITE FILE ERROR ######\nEXITING\n");
 						exit(1);
 					}
 					_DACK[4] = received[0];
 					_DACK[5] = received[1];
 					write(stream, _DACK, 6);
+					usleep(500000);
 					count = read(stream, (void*) received, 512);
 					if (count < 0) {
 						printf("###### READ ERROR ######\nEXITING\n");
 						exit(1);
 					}
-					temp = received[3];
-					temp *= 256;
-					pcknum = temp;
+					//pcknum = received[0];
+					//temp = received[3];
+//					temp *= 256;
+					pcknum += 256;
 					printf("%d, %d\n", pcknum, nump);
 				}
+		fclose(img);
 		return 1;
 	}
+fclose(img);
 printf("failed.\n");
 return 0;
 }

@@ -234,10 +234,10 @@ def camera_get_picture_jpg():
 		ser.write(ack)
 
 		received = ser.read(512)
-		size = received[4]
-		temp = received[3]
-		temp *= 256
-		size += temp
+		#size = received[4]
+		#temp = received[3]
+		#temp *= 256
+		#size += temp
 		ack[0] = 0xAA
 		ack[1] = 0x0E
 		ack[2] = 0x00
