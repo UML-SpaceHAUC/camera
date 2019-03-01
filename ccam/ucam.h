@@ -165,10 +165,10 @@ int camera_Jpg(int stream, char* str, int debug) {
   char inbuff[6];
   FILE *img;
   int count;
-  int pcknum;
-  int size;
-  int temp;
-  int nump;
+  int pcknum = 0;
+  int size = 0;
+  int temp = 0;
+  int nump = 0;
   img = fopen(str, "wb");
 
   count = write(stream, _GET, 6);
@@ -207,7 +207,7 @@ int camera_Jpg(int stream, char* str, int debug) {
     if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1]
     && inbuff[2] == _DATA[2]) {
       sleep(5);
-      size = inbuff[5];
+      size += inbuff[5];
       temp = inbuff[4];
       temp = temp * 256;
       size += temp;
