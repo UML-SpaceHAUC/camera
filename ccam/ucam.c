@@ -1,5 +1,5 @@
 // Copyright 2019 Sean Cummings
-#include "ccam/ucam.h"
+#include "ucam.h"
 
 int main(int argc, char* argv[]) {
   int stream = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
