@@ -198,7 +198,6 @@ def camera_get_picture_jpg():
 	ack[2] = 0x04
 
 	ser.write(get)
-	#received = ser.read(6)
 	for i in range(60):
 		received = ser.read(6)     #double reads required for ack?
 		if received[0] == ack[0] and received[1] == ack[1] and received[2] == ack[2]:

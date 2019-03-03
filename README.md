@@ -20,9 +20,6 @@ takes a 640x480 JPEG and saves it to a file named based off user input.
 All settings for the camera are currently hardcoded. Refer to comments/datasheet for
 uses outside the current capabilities.
 
-# camextra: Extra code
-main.c is a rough, working c file for the camera.
-
 # To run
 In C (ccam):
 make

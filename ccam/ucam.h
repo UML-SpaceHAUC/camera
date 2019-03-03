@@ -10,17 +10,10 @@
 #include <termios.h>
 #include <unistd.h>
 
-int camera_Sync(int stream, int debug);
-int camera_Initialize(int stream, int debug);
-int camera_Size(int stream, int debug);
-int camera_Jpg(int stream, char* str, int debug);
-
 int camera_Sync(int stream, int debug) {
   char _SYNC_COMMAND[6] = {0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00};
   char _SYNC_ACK_REPLY[6] = {0xAA, 0x0E, 0x0D, 0x00, 0x00, 0x00};
   char _SYNC_ACK_REPLY_EXT[6] = {0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00};
-  char _CAMERA_INIT[] = {0xAA, 0x01, 0x00, 0x07, 0x03, 0x07};
-  char _CAMERA_INIT_ACK[] = {0xAA, 0x0E, 0x01, 0x00, 0x00, 0x00};
 
   char inbuff[6];
 
@@ -168,7 +161,6 @@ int camera_Jpg(int stream, char* str, int debug) {
   int pcknum = 0;
   int size = 0;
   int temp = 0;
-  int nump = 0;
   img = fopen(str, "wb");
 
   count = write(stream, _GET, 6);
@@ -216,7 +208,6 @@ int camera_Jpg(int stream, char* str, int debug) {
       size += temp;
       if (debug)
         printf("size = %d\n", size);
-      nump = size/(512 - 6);
       count = write(stream, _DACK, 6);
       if (count < 0) {
         if (debug)

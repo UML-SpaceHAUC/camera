@@ -1,6 +1,12 @@
 // Copyright 2019 Sean Cummings
 #include "ucam.h"
 
+
+int camera_Sync(int stream, int debug);
+int camera_Initialize(int stream, int debug);
+int camera_Size(int stream, int debug);
+int camera_Jpg(int stream, char* str, int debug);
+
 int main(int argc, char* argv[]) {
   int stream = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
 
@@ -18,7 +24,7 @@ int main(int argc, char* argv[]) {
   tcflush(stream, TCIFLUSH);
   tcsetattr(stream, TCSANOW, &options);
 
-  char* str;
+  char* str = "";
   int debug = 0;
 
   if (argv[2]) {
@@ -47,7 +53,7 @@ int main(int argc, char* argv[]) {
 
   if (!argv[1]) {
     printf("Please enter the filename in format:\nFILENAME.jpg\n");
-    scanf("%s", &str);
+    scanf("%s", str);
   } else {
     str = argv[1];
   }

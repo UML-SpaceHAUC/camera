@@ -1,4 +1,5 @@
 main:
-	gcc ucam.c -o ucam
+	gcc -Wall -Wextra ucam.c -o ucam
+.PHONY: clean
 clean:
 	rm *.o *.jpg ucam
