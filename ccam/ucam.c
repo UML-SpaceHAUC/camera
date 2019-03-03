@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   tcflush(stream, TCIFLUSH);
   tcsetattr(stream, TCSANOW, &options);
 
-  char str;
+  char* str;
   int debug = 0;
 
   if (argv[2]) {
