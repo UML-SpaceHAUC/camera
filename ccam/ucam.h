@@ -214,18 +214,25 @@ int camera_Jpg(int stream, char* str, int debug) {
       temp = inbuff[3];
       temp = temp * 65536;
       size += temp;
-      if (debug)
+      printf("beebp");
+      if (debug) {
         printf("size = %d\n", size);
+	}
+      printf("weird");
       nump = size/(512 - 6);
-
+      printf("die here1");
       count = write(stream, _DACK, 6);
+	printf("dieafterwrite");
       if (count < 0) {
         if (debug)
           printf("###### WRITE FILE ERROR ######\nEXITING\n");
         exit(1);
       }
+	printf("die befire sleep");
       sleep(1);
+	printf("die here");
       count = read(stream, (void*) received, 512);
+      printf("count == %d", count);
       if (count < 0) {
         if (debug)
           printf("###### READ ERROR ######\nEXITING\n");
