@@ -98,7 +98,7 @@ int camera_Initialize(int stream, int debug) {
       printf("###### WRITE ERROR ######\nEXITING\n");
     exit(1);
   }
-  sleep(1);
+  usleep(50000);
   count = read(stream, (void*) inbuff, 6);
   if (debug) {
     for (int j = 0; j < 6; ++j) {
@@ -133,7 +133,7 @@ int camera_Size(int stream, int debug) {
       printf("###### WRITE ERROR ######\nEXITING\n");
     exit(1);
   }
-  sleep(1);
+  usleep(50000);
   count = read(stream, (void*) inbuff, 6);
   if (debug) {
     for (int j = 0; j < 6; ++j) {
@@ -177,7 +177,7 @@ int camera_Jpg(int stream, char* str, int debug) {
       printf("###### WRITE STREAM ERROR ######\nEXITING\n");
     exit(1);
   }
-  sleep(1);
+  usleep(50000);
   count = read(stream, (void*) inbuff, 6);
   if (count < 0) {
     if (debug)
@@ -192,7 +192,7 @@ int camera_Jpg(int stream, char* str, int debug) {
   }
   if (inbuff[0] == _GET_ACK[0] && inbuff[1] == _GET_ACK[1]
   && inbuff[2] == _GET_ACK[2]) {
-    sleep(2);
+    usleep(50000);
     count = read(stream, (void*) inbuff, 6);
     if (debug) {
       for (int j = 0; j < 6; ++j) {
@@ -206,7 +206,7 @@ int camera_Jpg(int stream, char* str, int debug) {
     }
     if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1]
     && inbuff[2] == _DATA[2]) {
-      sleep(5);
+      usleep(50000);
       size += inbuff[5];
       temp = inbuff[4];
       temp = temp * 256;
@@ -223,7 +223,7 @@ int camera_Jpg(int stream, char* str, int debug) {
           printf("###### WRITE FILE ERROR ######\nEXITING\n");
         exit(1);
       }
-      sleep(1);
+      usleep(50000);
       count = read(stream, (void*) received, 512);
       if (count < 0) {
         if (debug)
@@ -236,8 +236,8 @@ int camera_Jpg(int stream, char* str, int debug) {
       size += temp;
       _DACK[4] = received[0];
       _DACK[5] = received[1];
-      pcknum = 0;
-      while (pcknum < nump) {
+      pcknum = 1;
+      while (pcknum != 0) {
         char tempr[506];
         int j = 0;
         for (int k = 4; k < 510; k++) {
@@ -253,18 +253,16 @@ int camera_Jpg(int stream, char* str, int debug) {
       _DACK[4] = received[0];
       _DACK[5] = received[1];
       write(stream, _DACK, 6);
-      usleep(500000);
+      usleep(50000);
       count = read(stream, (void*) received, 512);
+      if (debug)
+        printf("pckgsize = %d\n", count);
+      pcknum = count;
       if (count < 0) {
         if (debug)
           printf("###### READ ERROR ######\nEXITING\n");
         exit(1);
       }
-  // pcknum = received[0];
-      temp = received[3];
-      temp *= 256;
-      pcknum += temp;
-      printf("%d, %d\n", pcknum, nump);
     }
   fclose(img);
   return 1;
