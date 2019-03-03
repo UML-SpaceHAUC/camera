@@ -49,10 +49,10 @@ int main(int argc, char* argv[]) {
     printf("Please enter the filename in format:\nFILENAME.jpg\n");
     scanf("%s", &str);
   } else {
-    str = atoi(argv[1]);
+    str = argv[1];
   }
 
-  if (!camera_Jpg(stream, &str, debug)) {
+  if (!camera_Jpg(stream, str, debug)) {
     if (debug)
       printf("failed to get\n");
     exit(1);
