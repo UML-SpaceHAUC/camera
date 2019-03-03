@@ -169,7 +169,7 @@ int camera_Jpg(int stream, char* str, int debug) {
       printf("###### WRITE STREAM ERROR ######\nEXITING\n");
     exit(1);
   }
-  usleep(50000);
+  usleep(80000);
   count = read(stream, (void*) inbuff, 6);
   if (count < 0) {
     if (debug)
@@ -178,7 +178,7 @@ int camera_Jpg(int stream, char* str, int debug) {
   }
   if (debug) {
     for (int j = 0; j < 6; ++j) {
-      printf("inbuff[%d] = 0x%X == SYNCREP = 0x%X\n",
+      printf("inbuff[%d] = 0x%X == GET_ACK = 0x%X\n",
       j, inbuff[j], _GET_ACK[j]);
     }
   }
@@ -241,11 +241,11 @@ int camera_Jpg(int stream, char* str, int debug) {
           printf("###### WRITE FILE ERROR ######\nEXITING\n");
         exit(1);
       }
-      _DACK[4] = received[0];
-      _DACK[5] = received[1];
       write(stream, _DACK, 6);
       usleep(50000);
       count = read(stream, (void*) received, 512);
+      _DACK[4] = received[0];
+      _DACK[5] = received[1];
       if (debug)
         printf("pckgsize = %d\n", count);
       pcknum = count;
@@ -255,6 +255,7 @@ int camera_Jpg(int stream, char* str, int debug) {
         exit(1);
       }
     }
+  write(stream, _DACK, 6);
   fclose(img);
   return 1;
   }
