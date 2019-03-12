@@ -17,8 +17,8 @@ The test.py file takes a RAW photo and saves it as test.RAW.
 The Makefile makes a program called ucam from ucam.c and ucam.h which
 takes a 640x480 JPEG and saves it to a file named based off user input.
 
-All settings for the camera are currently hardcoded. Refer to comments/datasheet for
-uses outside the current capabilities.
+All settings for the camera are currently hardcoded. Refer to comments/datasheet/User guide
+for uses outside the current capabilities.
 
 ## To run
 In C (ccam):
