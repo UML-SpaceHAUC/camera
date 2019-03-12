@@ -198,7 +198,6 @@ def camera_get_picture_jpg():
 	ack[2] = 0x04
 
 	ser.write(get)
-	#received = ser.read(6)
 	for i in range(60):
 		received = ser.read(6)     #double reads required for ack?
 		if received[0] == ack[0] and received[1] == ack[1] and received[2] == ack[2]:
@@ -234,10 +233,10 @@ def camera_get_picture_jpg():
 		ser.write(ack)
 
 		received = ser.read(512)
-		size = received[4]
-		temp = received[3]
-		temp *= 256
-		size += temp
+		#size = received[4]
+		#temp = received[3]
+		#temp *= 256
+		#size += temp
 		ack[0] = 0xAA
 		ack[1] = 0x0E
 		ack[2] = 0x00
@@ -257,6 +256,7 @@ def camera_get_picture_jpg():
 			temp = received[3]
 			temp *= 256
 			pcknum = temp
+            print(pcknum, nump)
 							#MUST ACK OR CAMERA LOOPS
 		return True
 	return False
