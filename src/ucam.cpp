@@ -1,15 +1,22 @@
-#include "ccam.h"
+#include <cstdarg>
+#include <cstdio>
+#include "ucam.h"
 
-ccam::ccam( bool debug, std::string file ) {
-    
+ucam::ucam( std::string outFile, va_list args ) : outFile_( outFile ) {
+    streamName_ = va_arg( args, std::string );
+    debug_ = va_arg( args, int );
 }
 
-bool ccam::setup( std::string stream ) {
-    stream_ = open( stream.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
+ucam::~ucam() {
+    if ( stream_ > 0 ) {
+        close( stream_ );
+    }
+}
+
+bool ucam::setup() {
+    stream_ = open( streamName_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY );
     if ( stream_ < 0 ) {
-        if( debug_ ) {
-            perror( "Unable to open UART" );
-        }
+        error( "Unable to open UART" );
         return false;
     }
     struct termios options;
@@ -18,19 +25,20 @@ bool ccam::setup( std::string stream ) {
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
     options.c_iflag = 0;
-    tcflust( stream_, TCIFLUSH );
+    tcflush( stream_, TCIFLUSH );
     tcsetattr( stream_, TCSANOW, &options );
+    return true;
 }
 
-bool ccam::takePicture() {
+std::string ucam::takePicture() {
     if ( sync() && initialize() && cameraSize() && cameraJpg() ) {
-        return true;
+        return outFile_;
     } else {
-        return false;
+        return "";
     }
 }
 
-bool ccam::sync() {
+bool ucam::sync() {
     char inbuff[6];
     int count = 0;
     unsigned time = 5000;
@@ -38,19 +46,14 @@ bool ccam::sync() {
     for ( unsigned i = 0; i < 60; ++i ) {
         count = write( stream_, _SYNC_COMMAND, 6 );
         if ( count < 0 ) {
-            if ( debug_ ) {
-                perror( "failed to write to stream" )
-            }
-            exit( 1 );
+            error( "Failed to write to stream" );
+            return false;
         }
         count = read( stream_, _SYNC_COMMAND, 6 );
         if ( count < 0 ) {
-            if ( debug_ ) {
-                perror( "Failed to read from stream" );
-            }
-            exit( 1 );
+            error( "Failed to read from stream" );
+            return false;
         }
-
         
         // DEBUG: Compares what you receive with what you expect
         if (debug_) {
@@ -63,29 +66,20 @@ bool ccam::sync() {
 
         if ( inbuff[0] == _SYNC_ACK_REPLY[0] && inbuff[1] ==
              _SYNC_ACK_REPLY[1] && inbuff[2] == _SYNC_ACK_REPLY[2] ) {
-            if ( debug ) {
-                printf( "We got ack!! \n Checking for SYNC...\n" );
-            }
+            debug( "We got ack!! \n Checking for SYNC...\n" );
             count = read( stream_, (void*) inbuff, 6 );
             if ( count < 0 ) {
-                if ( debug_ ) {
-                    printf("###### READ ERROR ######\nEXITING\n");
-                    exit(1);
-                }
-                if ( inbuff[0] == _SYNC_ACK_REPLY_EXT[0] && inbuff[1] ==
-                    _SYNC_ACK_REPLY_EXT[1] ) {
-                if ( debug_ ) {
-                    printf( "We got SYNC!!\n Sending ack...\n" );
-                }
+                error("###### READ ERROR ######\nEXITING\n");
+                return false;
+            }
+            if ( inbuff[0] == _SYNC_ACK_REPLY_EXT[0] && inbuff[1] ==
+                _SYNC_ACK_REPLY_EXT[1] ) {
+                debug( "We got SYNC!!\n Sending ack...\n" );
                 count = write( stream_, _SYNC_ACK_REPLY, 6 );
                 if ( count < 0 ) {
-                    if ( debug_ ) {
-                         printf("###### WRITE ERROR ######\nRETRYING\n");
-                    }
+                    debug("###### WRITE ERROR ######\nRETRYING\n");
                 } else {
-                    if ( debug_ ) {
-                        printf("Successfull SYNC!\n");
-                    }
+                    debug("Successfull SYNC!\n");
                     i = 60;
                     sleep(2); // As specified in datasheet
                     return true;
@@ -98,16 +92,14 @@ bool ccam::sync() {
     return false;
 }
 
-bool ccam::initialize() {
+bool ucam::initialize() {
     int count = 0;
     char inbuff[6];
 
     count = write( stream_, _CAMERA_INIT, 6 );
     if ( count < 0 ) {
-        if ( debug_ ) {
-            printf("###### WRITE ERROR ######\nEXITING\n");
-        }
-        exit(1);
+        error("###### WRITE ERROR ######\nEXITING\n");
+        return false;
     }
     usleep(50000);
     count = read( stream_, (void*) inbuff, 6 );
@@ -118,22 +110,18 @@ bool ccam::initialize() {
         }
     }
     if (count < 0) {
-        if (debug_) {
-            printf("###### READ ERROR ######\nEXITING\n");
-        }
-        exit(1);
+        error("###### READ ERROR ######\nEXITING\n");
+        return false;
     }
     if (inbuff[0] == _CAMERA_INIT_ACK[0] && inbuff[1] ==
         _CAMERA_INIT_ACK[1] && inbuff[2] == _CAMERA_INIT_ACK[2]) {
-        if (debug_) {
-            printf("Camera Initialized\n");
-        }
+        debug("Camera Initialized\n");
         return true;
     }
     return false;
 }
 
-bool ccam::cameraSize() {
+bool ucam::cameraSize() {
     /* This function sets the package size of JPEG images to
     512 bytes. For other configurations, refer to the
     USERGUIDE.md and the datasheet.
@@ -142,11 +130,9 @@ bool ccam::cameraSize() {
     char inbuff[6];
 
     count = write( stream_, _SIZE, 6 );
-    if (count < 0) {
-        if (debug_) {
-            printf("###### WRITE ERROR ######\nEXITING\n");
-        }
-        exit(1);
+    if ( count < 0 ) {
+        error("###### WRITE ERROR ######\nEXITING\n");
+        return false;
     }
     usleep(50000); // Hardware restriction
     count = read(stream_, (void*) inbuff, 6);
@@ -157,21 +143,18 @@ bool ccam::cameraSize() {
         }
     }
     if (count < 0) {
-        if (debug_) {
-            printf("###### READ ERROR ######\nEXITING\n");
-        }
-        exit(1);
+        error("###### READ ERROR ######\nEXITING\n");
+        return false;
     }
     if (inbuff[0] == _SIZE_ACK[0] && inbuff[1] == _SIZE_ACK[1]
         && inbuff[2] == _SIZE_ACK[2]) {
-        if (debug_)
-            printf("Camera Sized\n");
+        debug("Camera Sized\n");
         return true;
     }
     return false;
 }
 
-int cameraJpg(int stream, char* str, int debug) {
+bool ucam::cameraJpg() {
     /* This function retrieves the JPEG from the camera. It is currently
     setup for siz 512 byte packages, and may not work for smaller sizes.
     Refer to USERGUIDE.md and the datasheet for further details.
@@ -187,16 +170,16 @@ int cameraJpg(int stream, char* str, int debug) {
 
     count = write(stream_, _GET, 6);
     if (count < 0) {
-        if (debug_)
-            printf("###### WRITE STREAM ERROR ######\nEXITING\n");
-        exit(1);
+        error("###### WRITE STREAM ERROR ######\nEXITING\n");
+        fclose( img );
+        return false;
     }
     usleep(80000);
     count = read(stream_, (void*) inbuff, 6);
     if (count < 0) {
-        if (debug_)
-            printf("###### READ ERROR ######\nEXITING\n");
-        exit(1);
+        error("###### READ ERROR ######\nEXITING\n");
+        fclose( img );
+        return false;
     }
     if (debug_) {
         for (int j = 0; j < 6; ++j) {
@@ -214,9 +197,9 @@ int cameraJpg(int stream, char* str, int debug) {
             }
         }
         if (count < 0) {
-            if (debug_)
-                printf("###### READ ERROR ######\nEXITING\n");
-            exit(1);
+            error("###### READ ERROR ######\nEXITING\n");
+            fclose( img );
+            return false;
         }
         if (inbuff[0] == _DATA[0] && inbuff[1] == _DATA[1]
             && inbuff[2] == _DATA[2]) {
@@ -228,20 +211,19 @@ int cameraJpg(int stream, char* str, int debug) {
             temp = inbuff[3];
             temp = temp * 65536;
             size += temp;
-            if (debug_)
-                printf("size = %d\n", size); //FILESIZE in bytes
+            debug("size = " + std::to_string(size)); //FILESIZE in bytes
             count = write(stream_, _DACK, 6);
             if (count < 0) {
-                if (debug_)
-                    printf("###### WRITE FILE ERROR ######\nEXITING\n");
-                exit(1);
+                error("###### WRITE FILE ERROR ######\nEXITING\n");
+                fclose( img );
+                return false;
             }
             usleep(50000);
             count = read(stream_, (void*) received, 512);
             if (count < 0) {
-                if (debug_)
-                    printf("###### READ ERROR ######\nEXITING\n");
-                exit(1);
+                error("###### READ ERROR ######\nEXITING\n");
+                fclose( img );
+                return false;
             }
             temp = received[3];
             size = received[4];
@@ -258,51 +240,49 @@ int cameraJpg(int stream, char* str, int debug) {
                 }
                 count = fwrite(&tempr, 1, sizeof(tempr), img);
                 if ((count <= 0)) {
-                    if (debug_)
-                        printf("###### WRITE FILE ERROR ######\nEXITING\n");
-                    exit(1);
+                    error("###### WRITE FILE ERROR ######\nEXITING\n");
+                    fclose( img );
+                    return false;
                 }
                 if (write(stream_, _DACK, 6) < 0) {
-                    if (debug_)
-                        printf("Failed to Write.");
-                    exit(1);
+                    error("Failed to Write.");
+                    fclose( img );
+                    return false;
                 }
                 usleep(50000);
                 count = read(stream_, (void*) received, 512);
                 _DACK[4] = received[0];
                 _DACK[5] = received[1];
-                if (debug_)
-                    printf("pckgsize = %d\n", count);
+                debug("pckgsize = " +  std::to_string(count));
                 pcknum = count;
                 if (count < 0) {
-                    if (debug_)
-                        printf("###### READ ERROR ######\nEXITING\n");
-                    exit(1);
+                    error("###### READ ERROR ######\nEXITING\n");
+                    fclose( img );
+                    return false;
                 }
             }
             if (write(stream_, _DACK, 6) < 0) {
-                if (debug_)
-                    printf("Failed to Write.");
-                exit(1);
+                error("Failed to Write.");
+                fclose( img );
+                return false;
             }
             fclose(img);
             return true;
         }
     }
     fclose(img);
-    if (debug_)
-        printf("failed.\n");
+    error("failed.\n");
     return false;
 }
 
-ccam::_SYNC_COMMAND = { 0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00 };
-ccam::_SYNC_ACK_REPLY = { 0xAA, 0x0E, 0x0D, 0x00, 0x00, 0x00 };
-ccam::_SYNC_ACK_PRELY_EXT = { 0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00 };
-ccam::_CAMERA_INIT = { 0xAA, 0x01, 0x00, 0x07, 0x03, 0x07 };
-ccam::_CAMERA_INIT_ACK = { 0xAA, 0x0E, 0x01, 0x00, 0x00, 0x00 };
-ccam::_SIZE = { 0xAA, 0x06, 0x08, 0x00, 0x02, 0x00 };
-ccam::_SIZE_ACK = { 0xAA, 0x0E, 0x06, 0x00, 0x00, 0x00 };
-ccam::_GET[] = { 0xAA, 0x04, 0x05, 0x00, 0x00, 0x00 };
-ccam::_GET_ACK[] = { 0x0AA, 0x0E, 0x04, 0x00, 0x00, 0x00 };
-ccam::_DATA[] = { 0xAA, 0x0A, 0x05, 0x00, 0x00, 0x00 };
-ccam::_DACK[] = { 0xAA, 0x0E, 0x00, 0x00, 0x00, 0x00 };
+char ucam::_SYNC_COMMAND[6] = { (char)0xAA, (char)0x0D, (char)0x00, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_SYNC_ACK_REPLY[6] = { (char)0xAA, (char)0x0E, (char)0x0D, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_SYNC_ACK_REPLY_EXT[6] = { (char)0xAA, (char)0x0D, (char)0x00, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_CAMERA_INIT[6] = { (char)0xAA, (char)0x01, (char)0x00, (char)0x07, (char)0x03, (char)0x07 };
+char ucam::_CAMERA_INIT_ACK[6] = { (char)0xAA, (char)0x0E, (char)0x01, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_SIZE[6] = { (char)0xAA, (char)0x06, (char)0x08, (char)0x00, (char)0x02, (char)0x00 };
+char ucam::_SIZE_ACK[6] = { (char)0xAA, (char)0x0E, (char)0x06, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_GET[6] = { (char)0xAA, (char)0x04, (char)0x05, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_GET_ACK[6] = { (char)0x0AA, (char)0x0E, (char)0x04, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_DATA[6] = { (char)0xAA, (char)0x0A, (char)0x05, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_DACK[6] = { (char)0xAA, (char)0x0E, (char)0x00, (char)0x00, (char)0x00, (char)0x00 };
