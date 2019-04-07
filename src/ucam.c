@@ -1,7 +1,5 @@
-// Copyright 2019 Sean Cummings
-#include "ucam.h"
-
-/* This code was produced as part of the UMass Lowell
+/* Copyright 2019 Sean Cummings
+This code was produced as part of the UMass Lowell
 SPACEHAUC project. It is open for use/modificaton by anyone
 for any purpose.
 
@@ -14,6 +12,8 @@ https://www.4dsystems.com.au/productpages/uCAM-III/downloads/uCAM-III_datasheet_
 Please see the USERGUIDE.md for changes you can make to the code
 to enable other features of the camera.
 */
+#include "ucam.h"
+
 
 int camera_Sync(int stream, int debug) {
   /* This function synchronizes the camera with the computer/device.
