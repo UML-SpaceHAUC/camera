@@ -3,7 +3,7 @@
 #include "ucam.h"
 
 ucam::ucam( std::string outFile, va_list args ) : outFile_( outFile ) {
-    streamName_ = va_arg( args, std::string );
+    streamName_ = va_arg( args, char * );
     debug_ = va_arg( args, int );
 }
 
