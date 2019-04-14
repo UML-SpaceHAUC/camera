@@ -2,7 +2,8 @@
 #include <cstdio>
 #include "ucam.h"
 
-ucam::ucam( std::string outFile, va_list args ) : outFile_( outFile ) {
+ucam::ucam( std::string outFile, va_list args ) {
+    outFile_ = outFile;
     streamName_ = va_arg( args, char * );
     debug_ = va_arg( args, int );
 }
@@ -30,7 +31,9 @@ bool ucam::setup() {
     return true;
 }
 
-std::string ucam::takePicture() {
+std::string ucam::takePicture( std::string loc, bool debug ) {
+    outFile_ = loc;
+    debug_ = debug;
     if ( sync() && initialize() && cameraSize() && cameraJpg() ) {
         return outFile_;
     } else {
@@ -42,14 +45,15 @@ bool ucam::sync() {
     char inbuff[6];
     int count = 0;
     unsigned time = 5000;
-
+    //std::cout << stream_;
     for ( unsigned i = 0; i < 60; ++i ) {
         count = write( stream_, _SYNC_COMMAND, 6 );
         if ( count < 0 ) {
             error( "Failed to write to stream" );
             return false;
         }
-        count = read( stream_, _SYNC_COMMAND, 6 );
+        sleep(1);
+        count = read( stream_, inbuff, 6 );
         if ( count < 0 ) {
             error( "Failed to read from stream" );
             return false;
@@ -231,7 +235,7 @@ bool ucam::cameraJpg() {
             size += temp;
             _DACK[4] = received[0];
             _DACK[5] = received[1];
-            while (pcknum != 0) {
+            while (pcknum > 0) {
                 char tempr[506];
                 int j = 0;
                 for (int k = 4; k < 510; k++) {
@@ -255,11 +259,11 @@ bool ucam::cameraJpg() {
                 _DACK[5] = received[1];
                 debug("pckgsize = " +  std::to_string(count));
                 pcknum = count;
-                if (count < 0) {
+                /*if (count < 0) {
                     error("###### READ ERROR ######\nEXITING\n");
                     fclose( img );
                     return false;
-                }
+                }*/
             }
             if (write(stream_, _DACK, 6) < 0) {
                 error("Failed to Write.");
@@ -275,9 +279,9 @@ bool ucam::cameraJpg() {
     return false;
 }
 
-char ucam::_SYNC_COMMAND[6] = { (char)0xAA, (char)0x0D, (char)0x00, (char)0x00, (char)0x00, (char)0x00 };
-char ucam::_SYNC_ACK_REPLY[6] = { (char)0xAA, (char)0x0E, (char)0x0D, (char)0x00, (char)0x00, (char)0x00 };
-char ucam::_SYNC_ACK_REPLY_EXT[6] = { (char)0xAA, (char)0x0D, (char)0x00, (char)0x00, (char)0x00, (char)0x00 };
+char ucam::_SYNC_COMMAND[6] = { 0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00 };
+char ucam::_SYNC_ACK_REPLY[6] = { 0xAA, 0x0E, 0x0D, 0x00, 0x00, 0x00 };
+char ucam::_SYNC_ACK_REPLY_EXT[6] = { 0xAA, 0x0D, 0x00, 0x00, 0x00, 0x00 };
 char ucam::_CAMERA_INIT[6] = { (char)0xAA, (char)0x01, (char)0x00, (char)0x07, (char)0x03, (char)0x07 };
 char ucam::_CAMERA_INIT_ACK[6] = { (char)0xAA, (char)0x0E, (char)0x01, (char)0x00, (char)0x00, (char)0x00 };
 char ucam::_SIZE[6] = { (char)0xAA, (char)0x06, (char)0x08, (char)0x00, (char)0x02, (char)0x00 };

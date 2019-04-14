@@ -13,7 +13,7 @@
 
 class ucam : public Camera {
     public:
-        std::string takePicture();
+        std::string takePicture( std::string loc, bool debug );
         ucam( std::string outFile, va_list args );
         ~ucam();
         bool setup();
@@ -33,7 +33,6 @@ class ucam : public Camera {
         }
 
         bool debug_ = false;
-        std::string outFile_ = "";
         std::string streamName_ = "";
         int stream_ = 0;
 
